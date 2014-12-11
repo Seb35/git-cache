@@ -1,0 +1,155 @@
+#!/bin/bash
+# Cache regularly cloned Git repositories
+# Licence: WTFPL 2.0
+
+# Get cache directory
+CACHE=$(git config cache.directory)
+if [ ! -d "$CACHE" -a ! "$1" = "init" ]
+then
+    echo "Inexistant cache directory, please create it with \`git cache init [DIR]'"
+    exit 1
+fi
+
+# Trigger 'init' action
+if [ "$1" = "init" ]
+then
+   
+    if [ -d "$CACHE" -a -f "$CACHE/HEAD" -a ! "$2" = "$CACHE" ]
+    then
+        echo "Cache directory is already initialised. You can use \`git cache delete --force' to delete it."
+        echo "$CACHE"
+        exit 1
+    fi
+    
+    # Try to create directory in the following order:
+    # 1) given by argument
+    # 2) /var/cache/git-cache if root or sudo
+    # 3) ~/.cache/git-cache else 
+    CACHE="$2"
+    TYPE=global
+    [ "$CACHE" = "" -a -w /var/cache ] && CACHE=/var/cache/git-cache && TYPE=system
+    [ "$CACHE" = "" ] && CACHE=~/.cache/git-cache
+    mkdir -p "$CACHE"
+    cd "$CACHE"
+    git init --bare
+    chgrp -R users .
+    chmod -R g+w .
+    git config --$TYPE cache.directory "$CACHE"
+    
+# Trigger 'delete' action
+elif [ "$1" = "delete" ]
+then
+    
+    if [ ! "$2" = "--force" ]
+    then
+        echo "Please add: 1) the --force option; to confirm you want to delete the whole cache directory."
+        exit 1
+    fi
+   
+    if [ ! "$(git config --system cache.directory)" = "" ]
+    then
+        CACHE="$(git config --system cache.directory)"
+        git config --system --remove-section cache 2>/dev/null && rm -rf "$CACHE" && echo "System cache directory $CACHE deleted."
+    fi
+    
+    if [ ! "$(git config --global cache.directory)" = "" ]
+    then
+        CACHE="$(git config --global cache.directory)"
+        git config --global --remove-section cache 2>/dev/null && rm -rf "$CACHE" && echo "Global user cache directory $CACHE deleted."
+    fi
+    
+# Trigger 'add' action
+elif [ "$1" = "add" ]
+then
+    
+    if [ "$2" = "" -o "$3" = "" ]
+    then
+        echo "Please add: 1) the remote name and 2) the remote url to be added in the cache directory."
+        exit 1
+    fi
+    
+    # Fetch new Git repository in a temporary directory for speed reasons
+    #dir=$(mktemp -d)
+    #cd $dir
+    #git init --bare
+    #git remote add --mirror=fetch "$2" "$3"
+    #git fetch --all
+    
+    # Copy it in the main cache directory
+    cd "$CACHE"
+    #git remote add --mirror=fetch "$2" $dir
+    #git fetch --all
+    #git remote set-url "$2" "$3"
+    git remote add "$2" "$3"
+    git fetch "$2"
+    #rm -rf $dir
+    
+    # Display use
+    echo
+    echo "You can now use the cached directory with:"
+    echo
+    echo "    git clone --reference $CACHE $3"
+    echo
+    
+# Trigger 'rm' action
+elif [ "$1" = "rm" ]
+then
+    
+    if [ ! "$2" = "--force" -o "$3" = "" ]
+    then
+        echo "Please add: 1) the --force option and 2) the remote name; to confirm you want to delete this Git repository from the cache directory."
+        exit 1
+    fi
+    
+    cd "$CACHE"
+    git remote rm "$3"
+    
+# Trigger 'update' action
+elif [ "$1" = "fetch" ]
+then
+    
+    cd "$CACHE"
+    git fetch --all --prune
+    
+# Trigger 'show' action
+elif [ "$1" = "show" ]
+then
+    
+    cd "$CACHE"
+    git remote -v | grep \(fetch\) | grep "$2" | awk "{print \"git clone --reference $CACHE \"\$2}"
+    
+# Trigger 'help' action
+elif [ "$1" = "help" ]
+then
+    
+    echo
+    echo "Use:"
+    echo
+    echo "    git cache init [DIR]       initialise the cache directory"
+    echo "    git cache delete --force   delete the cache directory"
+    echo
+    echo "    git cache add NAME URL     add a cached Git repository"
+    echo "    git cache show [NAME]      show all cached Git repositories"
+    echo "    git cache fetch            fetch all cached Git repository"
+    echo "    git cache rm --force NAME  remove a cached Git repository"
+    echo
+    echo "    (Any other command will be applied to the cache directory.)"
+    echo "     e.g. \`git cache gc\` or \`git cache remote show\`.)"
+    echo
+    echo "Standard cache directory is either:"
+    echo
+    echo "    /var/cache/git-cache  if created by root (then usable by every user)"
+    echo "    ~/.cache/git-cache    else"
+    echo
+    echo "Once created, the cache directory is written in the configuration parameter"
+    echo "'cache.directory', either in the system or global user configuration."
+    echo
+    
+# Default trigger to directly act on the cache directory
+else
+    
+    cd "$CACHE"
+    git "$@"
+    
+fi
+
