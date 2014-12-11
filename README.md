@@ -93,3 +93,4 @@ References
 
 This program is a generalisation to arbitrary Git repositories of an idea and implementation by [Randy Fay](http://randyfay.com/content/reference-cache-repositories-speed-clones-git-clone-reference) specifically for Drupal. Hopefully this generalisation is sufficiently simple to stay useable and practical.
 
+Similar program: [git-cached by dvessel](https://github.com/dvessel/git-cached)
