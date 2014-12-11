@@ -29,7 +29,7 @@ If you are a regular hacker of a software, say MediaWiki, you can cache most com
       
       You can now use the cache directory with:
       
-          git clone --reference /var/cache/git-cache https://git.wikimedia.org/git/mediawiki/extensions/TorBlock.git
+          git clone --reference /var/cache/git-cache https://git.wikimedia.org/git/mediawiki/core.git
       
       (1607 seconds, the cache takes 314 Mio)
     $ git clone --reference /var/cache/git-cache https://git.wikimedia.org/git/mediawiki/core.git clone-1
@@ -47,7 +47,7 @@ __Use:__ All commands have the format
 
     git cache ACTION PARAMETERS
 
-Details:
+__Commands:__
 
     # General maintenance commands
     git cache init [DIR]       initialise the cache directory
