@@ -31,9 +31,7 @@ then
     [ "$CACHE" = "" ] && CACHE=~/.cache/git-cache
     mkdir -p "$CACHE"
     cd "$CACHE"
-    git init --bare
-    chgrp -R users .
-    chmod -R g+w .
+    git init --bare --shared=group
     git config --$TYPE cache.directory "$CACHE"
     
 # Trigger 'delete' action
